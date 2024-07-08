@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive US Map</title>
     <link rel="stylesheet" href="leaflet.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <style>
         body { margin: 0; display: flex; }
         #mapid {
@@ -30,9 +33,19 @@
 </head>
 <body>
     <div id="mapid"></div>
-    <div id="sidebar">Selected States:</div>
+    <div id="sidebar">
+        <div class="form-group" style="margin-bottom: 20px;" id="selected-state-dropdown">
+            <label class="control-label">Select Account:</label>
+            <select class="form-control" id="selected-account">
+                <option value="">Select a account</option>
+            </select>
+        </div>
+        <label class="control-label">Selected States:</label>
+        <div id="selected-states">No States selected</div>
+        <br>
+        <button id="submit" class="btn btn-primary" onclick="submit()">Submit</button>
+    </div>
     <script src="leaflet.js"></script>
-    <script src="jquery.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
