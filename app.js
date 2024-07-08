@@ -135,28 +135,30 @@ $('document').ready(() => {
 
 function submit() {
     const account = $('#selected-account').val();
-    const mapData = new Array();
+    const mapData = new Map();
     for (const [key, value] of Object.entries(selectedFeatures)) {
         //console.log(key, value);
-        //mapData['id'] = key;
-        //mapData['state_name'] = value;
-        mapData.push(key);
+        mapData.set(key, value);
     }
-    var finalData = new Map();
-    finalData['account_number'] = account;
-    finalData['state_ids'] = mapData;
-    var json = JSON.stringify(finalData);
+
+    const obj = Object.fromEntries(mapData);
+    const stateMapJson = JSON.stringify(obj);
+    var json = '{' + '\"account_number\":' + "\"" +account  + "\"" + ',' + '\"state_map\":' +  stateMapJson + '}';
 
     $.ajax({
         type: 'POST',
         url: 'http://localhost:8090/states',
         headers: { 
-            'Content-Type': 'application/json' 
+            'Content-Type': 'application/json;charset=UTF-8' 
+          },
+        dataType: "json",
+        beforeSend: function(x) {
+            if (x && x.overrideMimeType) {
+              x.overrideMimeType("application/json;charset=UTF-8");
+            }
           },
         crossDomain: true, 
-        data: {
-            data: json
-        },
+        data: json,
         success: function (data) {
             console.log(data);
         }
