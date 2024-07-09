@@ -1,9 +1,8 @@
-// Object to keep track of selected states
-const selectedStates = {};
-const selectedFeatures = new Map();
 $('document').ready(() => {
 
- 
+    // Object to keep track of selected states
+    const selectedStates = new Map();
+    const selectedFeatures = new Map();
     var map;
     const renderMap = () => {
         
@@ -17,7 +16,7 @@ $('document').ready(() => {
             maxZoom: 10,
             attribution: '© OpenStreetMap'
         }).addTo(map);
-        $.getJSON("us-states.json", function (geoJsonData) {
+        $.getJSON("data/us-states.json", function (geoJsonData) {
             //$("#selected-account").val("account1");
             if ($.isEmptyObject(selectedStates)) {
                 $('#submit').prop('disabled', true);
@@ -38,7 +37,7 @@ $('document').ready(() => {
                         })
                     }).addTo(map);
                     const currentStateName = feature.properties.name;
-                    if(selectedStates && selectedStates[currentStateName]){
+                    if(selectedStates && selectedStates.get(currentStateName)){
                         layer.setStyle({ color: 'red' });
                         $('#submit').prop('disabled', false);
                     }
@@ -47,13 +46,13 @@ $('document').ready(() => {
                         const stateName = feature.properties.name;
                         const featureId = feature.id;
                         // Toggle selection
-                        if (selectedStates[stateName]) {
-                            delete selectedStates[stateName];
-                            delete selectedFeatures[featureId];
+                        if (selectedStates.get(stateName)) {
+                            selectedStates.delete(stateName);
+                            selectedFeatures.delete(featureId);
                             layer.setStyle({ color: 'blue' });
                         } else {
-                            selectedStates[stateName] = true;
-                            selectedFeatures[featureId] = stateName;
+                            selectedStates.set(stateName, true);
+                            selectedFeatures.set(featureId, stateName);
                             layer.setStyle({ color: 'red' });
                         }
                         console.log(feature);
@@ -88,39 +87,65 @@ $('document').ready(() => {
     function updateSidebar() {
         const sidebar = document.getElementById('selected-states');
         sidebar.innerHTML = '';
-        for (const state in selectedStates) {
-            sidebar.innerHTML += `<div class="state-name">${state}</div>`;
-        }
+        selectedStates.forEach((values, keys) => {
+            sidebar.innerHTML += `<div class="state-name">${keys}</div>`;
+        });
+        
     }
-    function submit() {
+    $('#submit-states').on('click', function (e) {
         const account = $('#selected-account').val();
+        const mapData = new Map();
+        for (const [key, value] of Object.entries(selectedFeatures)) {
+            //console.log(key, value);
+            mapData.set(key, value);
+        }
+
+        const obj = Object.fromEntries(mapData);
+        const stateMapJson = JSON.stringify(obj);
+        var json = '{' + '\"account_number\":' + "\"" +account  + "\"" + ',' + '\"state_map\":' +  stateMapJson + '}';
+
         $.ajax({
             type: 'POST',
             url: 'http://localhost:8090/states',
-            data: {
-                data: JSON.stringify({ 'account_number': account,'state_map' : selectedFeatures })
+            headers: { 
+                'Content-Type': 'application/json;charset=UTF-8' 
             },
+            dataType: "json",
+            beforeSend: function(x) {
+                if (x && x.overrideMimeType) {
+                x.overrideMimeType("application/json;charset=UTF-8");
+                }
+            },
+            crossDomain: true, 
+            data: json,
             success: function (data) {
-                console.log(data);
+                $.toast({
+                    heading: 'Success',
+                    text: 'Successfully saved states',
+                    showHideTransition: 'slide',
+                    icon: 'success'
+                })
             }
-        })
-    };
+        });
+    });
 
     $('#selected-account').on('change', function (e) {
         const account = $(this).val(e.target.value);
         var item=$(this);
         var accountNumber = item.val();
+        selectedStates.clear();
+        selectedFeatures.clear();
         $.ajax({
             type: 'GET',
-            url: 'http://localhost:8090/states/{accountNumber}',
+            url: 'http://localhost:8090/states/' + accountNumber,
             success: function (data) {
                 console.log(data);
                 // Populate selected states
                 // Create an array of selected states
                 var s = data['states'];
                 for (var i = 0; i < s.length; i++) {
-                    selectedStates[s[i].state_name] = true;
-                    selectedFeatures[s[i].id] = s[i].state_name;
+                    selectedStates.set(s[i].state_name, true);
+                    selectedFeatures.set(s[i].id, s[i].state_name);
                 }
 
                 updateSidebar();
@@ -132,35 +157,3 @@ $('document').ready(() => {
     });
 
 });
-
-function submit() {
-    const account = $('#selected-account').val();
-    const mapData = new Map();
-    for (const [key, value] of Object.entries(selectedFeatures)) {
-        //console.log(key, value);
-        mapData.set(key, value);
-    }
-
-    const obj = Object.fromEntries(mapData);
-    const stateMapJson = JSON.stringify(obj);
-    var json = '{' + '\"account_number\":' + "\"" +account  + "\"" + ',' + '\"state_map\":' +  stateMapJson + '}';
-
-    $.ajax({
-        type: 'POST',
-        url: 'http://localhost:8090/states',
-        headers: { 
-            'Content-Type': 'application/json;charset=UTF-8' 
-          },
-        dataType: "json",
-        beforeSend: function(x) {
-            if (x && x.overrideMimeType) {
-              x.overrideMimeType("application/json;charset=UTF-8");
-            }
-          },
-        crossDomain: true, 
-        data: json,
-        success: function (data) {
-            console.log(data);
-        }
-    })
-};
