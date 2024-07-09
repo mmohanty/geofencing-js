@@ -119,12 +119,13 @@ $('document').ready(() => {
             crossDomain: true, 
             data: json,
             success: function (data) {
-                $.toast({
-                    heading: 'Success',
-                    text: 'Successfully saved states',
-                    showHideTransition: 'slide',
-                    icon: 'success'
-                })
+                let toast = {
+                    title: "Success",
+                    message: 'Successfully submitted states',
+                    status: TOAST_STATUS.SUCCESS,
+                    timeout: 10000
+                }
+                Toast.create(toast);
             }
         });
     });
